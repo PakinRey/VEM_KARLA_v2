@@ -1,0 +1,5 @@
+{
+  "name": "Business Decision Toolkit Suite",
+  "description": "A modular suite of tools for business decision-making, starting with a powerful Queuing Theory analyzer. Users can manually input parameters or upload a photo of a problem for Gemini to analyze and auto-populate the form, enabling quick calculations and visualizations of system performance.",
+  "requestFramePermissions": []
+}
