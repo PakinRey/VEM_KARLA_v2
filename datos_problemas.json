@@ -1,0 +1,234 @@
+{
+  "problema_portobello_crashing_pert": {
+    "preguntasAsociadas": [1, 2, 4, 5, 6, 7, 8, 9],
+    "fuentesDeDatos": [
+      "Documento sin título (1).pdf",
+      "Crashing.csv",
+      "WhatsApp Image 2025-10-23 at 9.46.59 PM.jpeg"
+    ],
+    "inputData": {
+      "costosFijosPorSemana": 10000,
+      "costoPenalizacionPorSemana": 10000,
+      "semanaLimitePenalizacion": 17,
+      "actividades": [
+        {
+          "id": "A",
+          "predecesores": "-",
+          "tiempoNormal": 5,
+          "costoNormal": 25000,
+          "tiempoAcelerado": 3,
+          "costoAcelerado": 36000,
+          "pert_a": 2,
+          "pert_m": 3,
+          "pert_b": 4
+        },
+        {
+          "id": "B",
+          "predecesores": "-",
+          "tiempoNormal": 1,
+          "costoNormal": 10000,
+          "tiempoAcelerado": 0.5,
+          "costoAcelerado": 15000,
+          "pert_a": 1,
+          "pert_m": 1,
+          "pert_b": 1
+        },
+        {
+          "id": "C",
+          "predecesores": "A",
+          "tiempoNormal": 3,
+          "costoNormal": 18000,
+          "tiempoAcelerado": 1.5,
+          "costoAcelerado": 22000,
+          "pert_a": 2,
+          "pert_m": 2,
+          "pert_b": 2
+        },
+        {
+          "id": "D",
+          "predecesores": "A",
+          "tiempoNormal": 2,
+          "costoNormal": 8000,
+          "tiempoAcelerado": 1,
+          "costoAcelerado": 12000,
+          "pert_a": 4,
+          "pert_m": 6,
+          "pert_b": 12
+        },
+        {
+          "id": "E",
+          "predecesores": "A",
+          "tiempoNormal": 4,
+          "costoNormal": 8000,
+          "tiempoAcelerado": 1.5,
+          "costoAcelerado": 15000,
+          "pert_a": 2,
+          "pert_m": 5,
+          "pert_b": 8
+        },
+        {
+          "id": "F",
+          "predecesores": "B, C",
+          "tiempoNormal": 1,
+          "costoNormal": 12000,
+          "tiempoAcelerado": 0.5,
+          "costoAcelerado": 15000,
+          "pert_a": 2,
+          "pert_m": 3,
+          "pert_b": 8
+        },
+        {
+          "id": "G",
+          "predecesores": "D",
+          "tiempoNormal": 4,
+          "costoNormal": 20000,
+          "tiempoAcelerado": 2.5,
+          "costoAcelerado": 30000,
+          "pert_a": 3,
+          "pert_m": 7,
+          "pert_b": 10
+        },
+        {
+          "id": "H",
+          "predecesores": "E",
+          "tiempoNormal": 2,
+          "costoNormal": 12000,
+          "tiempoAcelerado": 1.5,
+          "costoAcelerado": 17000,
+          "pert_a": 3,
+          "pert_m": 5,
+          "pert_b": 9
+        },
+        {
+          "id": "I",
+          "predecesores": "F, G",
+          "tiempoNormal": 4,
+          "costoNormal": 13000,
+          "tiempoAcelerado": 2.5,
+          "costoAcelerado": 21000,
+          "pert_a": 5,
+          "pert_m": 8,
+          "pert_b": 18
+        },
+        {
+          "id": "J",
+          "predecesores": "G, H",
+          "tiempoNormal": 2,
+          "costoNormal": 10000,
+          "tiempoAcelerado": 1.5,
+          "costoAcelerado": 16000,
+          "pert_a": 1,
+          "pert_m": 1,
+          "pert_b": 5
+        },
+        {
+          "id": "K",
+          "predecesores": "I, J",
+          "tiempoNormal": 2,
+          "costoNormal": 8000,
+          "tiempoAcelerado": 1,
+          "costoAcelerado": 12000,
+          "pert_a": 1,
+          "pert_m": 2,
+          "pert_b": 3
+        },
+        {
+          "id": "L",
+          "predecesores": "J",
+          "tiempoNormal": 3,
+          "costoNormal": 7000,
+          "tiempoAcelerado": 2,
+          "costoAcelerado": 10000,
+          "pert_a": 2,
+          "pert_m": 3,
+          "pert_b": 4
+        },
+        {
+          "id": "M",
+          "predecesores": "K",
+          "tiempoNormal": 1,
+          "costoNormal": 5000,
+          "tiempoAcelerado": 0.5,
+          "costoAcelerado": 9000,
+          "pert_a": 1,
+          "pert_m": 1,
+          "pert_b": 1
+        },
+        {
+          "id": "N",
+          "predecesores": "K",
+          "tiempoNormal": 3,
+          "costoNormal": 6000,
+          "tiempoAcelerado": 1.5,
+          "costoAcelerado": 10000,
+          "pert_a": 2,
+          "pert_m": 3,
+          "pert_b": 5
+        },
+        {
+          "id": "O",
+          "predecesores": "L, M",
+          "tiempoNormal": 5,
+          "costoNormal": 14000,
+          "tiempoAcelerado": 3,
+          "costoAcelerado": 22000,
+          "pert_a": 3,
+          "pert_m": 5,
+          "pert_b": 7
+        },
+        {
+          "id": "P",
+          "predecesores": "N",
+          "tiempoNormal": 4,
+          "costoNormal": 16000,
+          "tiempoAcelerado": 2.5,
+          "costoAcelerado": 24000,
+          "pert_a": 2,
+          "pert_m": 4,
+          "pert_b": 6
+        }
+      ]
+    }
+  },
+  "costos_operacion_restaurante": {
+    "preguntasAsociadas": [3, 5],
+    "fuentesDeDatos": ["Documento sin título (1).pdf"],
+    "inputData": {
+      "costoFijoOperacionMensual": 10000,
+      "ventasPromedioMensual": 32000
+    }
+  },
+  "problema_lineas_espera": {
+    "preguntasAsociadas": [10, 11, 12, 13, 14, 15],
+    "fuentesDeDatos": ["Documento sin título (1).pdf"],
+    "inputData": {
+      "servidores_s": 1,
+      "llegada_clientes": 7,
+      "llegada_tiempo_minutos": 91,
+      "servicio_clientes": 4.5,
+      "servicio_tiempo_minutos": 45
+    }
+  },
+  "problema_teoria_decisiones": {
+    "preguntasAsociadas": [16, 17, 18, 19, 20],
+    "fuentesDeDatos": ["Documento sin título (1).pdf"],
+    "inputData": {
+      "decisiones_ordenar": [5, 20, 40],
+      "estados_demanda": [
+        {"nombre": "Baja", "valor": 5},
+        {"nombre": "Media", "valor": 20},
+        {"nombre": "Alta", "valor": 40}
+      ],
+      "pagos": {
+        "precioVenta": 100,
+        "costoCompra": 20,
+        "costoFaltante": 50
+      },
+      "probabilidades": {
+        "alta": 0.3,
+        "media": 0.5,
+        "baja": 0.2
+      }
+    }
+  }
+}
