@@ -1,251 +1,157 @@
-
-import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, ComposedChart } from 'recharts';
-import { solveMM1, solveMMs, calculatePnDistribution } from '../services/queuingService';
-import { analyzeProblemImage, explainConcept, analyzeComplexScenario } from '../services/geminiService';
+import React, { useState } from 'react';
 import type { QueuingParams, QueuingResults, PnData } from '../types';
+import { solveMMs, calculatePnDistribution } from '../services/queuingService';
+import { getAIAnalysis } from '../services/geminiService';
 import Card from './ui/Card';
-import Button from './ui/Button';
 import Input from './ui/Input';
-
-const LambdaIcon = () => <span className="text-slate-400 font-serif text-lg">λ</span>;
-const MuIcon = () => <span className="text-slate-400 font-serif text-lg">μ</span>;
-const ServerIcon = () => <span className="text-slate-400 font-bold">s</span>;
-const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>;
+import Button from './ui/Button';
 
 const QueuingModule: React.FC = () => {
-    const [params, setParams] = useState<QueuingParams>({ lambda: 5, mu: 6, s: 1 });
+    const [params, setParams] = useState<QueuingParams>({ lambda: 5, mu: 3, s: 2 });
     const [results, setResults] = useState<QueuingResults | null>(null);
     const [pnData, setPnData] = useState<PnData[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [activeTab, setActiveTab] = useState<'calculator' | 'analysis' | 'explanation'>('calculator');
+    const [error, setError] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+    const [aiAnalysis, setAiAnalysis] = useState<string>('');
 
-    const [analysisQuery, setAnalysisQuery] = useState('');
-    const [analysisResult, setAnalysisResult] = useState('');
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-    const [explanationResult, setExplanationResult] = useState<{ explanation: string; sources: any[] } | null>(null);
-    const [isExplaining, setIsExplaining] = useState(false);
-    
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleParamChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setParams({ ...params, [e.target.name]: parseFloat(e.target.value) || 0 });
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setParams({ ...params, [e.target.name]: parseFloat(e.target.value) });
     };
 
-    const handleCalculate = useCallback(() => {
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
         setIsLoading(true);
-        setError(null);
+        setError('');
         setResults(null);
         setPnData([]);
+        setAiAnalysis('');
+
         try {
-            const newResults = params.s === 1 ? solveMM1(params) : solveMMs(params);
-            setResults(newResults);
-            const newPnData = calculatePnDistribution(newResults, params);
-            setPnData(newPnData);
-        } catch (err) {
-            setError((err as Error).message);
+            if (params.lambda <= 0 || params.mu <= 0 || params.s <= 0) {
+                 throw new Error("Arrival rate (λ), service rate (μ), and number of servers (s) must be positive numbers.");
+            }
+             if (!Number.isInteger(params.s)) {
+                throw new Error("Number of servers (s) must be an integer.");
+            }
+            if (params.s * params.mu <= params.lambda) {
+                throw new Error('For a stable M/M/s system, total service rate (s * μ) must be greater than arrival rate (λ).');
+            }
+            
+            const res = solveMMs(params);
+            setResults(res);
+            const pn = calculatePnDistribution(res, params);
+            setPnData(pn);
+        } catch (err: any) {
+            setError(err.message);
         } finally {
             setIsLoading(false);
         }
-    }, [params]);
-
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setIsUploading(true);
-        setError(null);
-        try {
-            const extractedParams = await analyzeProblemImage(file);
-            setParams({
-                lambda: extractedParams.lambda || 0,
-                mu: extractedParams.mu || 0,
-                s: extractedParams.s || 1,
-            });
-        } catch (err) {
-            console.error("Error analyzing image:", err);
-            setError("Failed to analyze image. Please check the image format and content.");
-        } finally {
-            setIsUploading(false);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
     };
 
-    const handleAnalyzeScenario = async () => {
-        if (!analysisQuery.trim()) return;
-        setIsAnalyzing(true);
-        setAnalysisResult('');
-        setError(null);
-        try {
-            const result = await analyzeComplexScenario(analysisQuery);
-            setAnalysisResult(result);
-        } catch (err) {
-            setError('Failed to get analysis from Gemini.');
-        } finally {
-            setIsAnalyzing(false);
-        }
+    const handleAiAnalysis = async () => {
+        if (!results) return;
+        setIsAiLoading(true);
+        setAiAnalysis('');
+        const prompt = `
+            You are an expert in Operations Management.
+            Analyze the following M/M/s queuing system results and provide actionable business insights.
+            Explain the key metrics in simple terms and suggest potential improvements.
+
+            System Parameters:
+            - Arrival Rate (λ): ${params.lambda} customers/unit of time
+            - Service Rate per Server (μ): ${params.mu} customers/unit of time
+            - Number of Servers (s): ${params.s}
+
+            Calculated Metrics:
+            - Server Utilization (ρ): ${(results.rho * 100).toFixed(2)}%
+            - Average number of customers in the system (L): ${results.L.toFixed(3)}
+            - Average number of customers in the queue (Lq): ${results.Lq.toFixed(3)}
+            - Average time a customer spends in the system (W): ${results.W.toFixed(3)} units of time
+            - Average time a customer spends in the queue (Wq): ${results.Wq.toFixed(3)} units of time
+            - Probability of the system being empty (P0): ${(results.P0 * 100).toFixed(2)}%
+
+            Based on these results, what is the overall health of this queuing system? What are the main bottlenecks or inefficiencies? 
+            Provide specific, practical recommendations for the business to improve customer experience and operational efficiency. 
+            For example, should they consider adding/removing servers, improving service speed, or managing arrivals?
+        `;
+        const analysis = await getAIAnalysis(prompt);
+        setAiAnalysis(analysis);
+        setIsAiLoading(false);
     };
-    
-    const handleExplainConcept = async () => {
-        setIsExplaining(true);
-        setExplanationResult(null);
-        setError(null);
-        try {
-            const result = await explainConcept('Queuing Theory M/M/s model');
-            setExplanationResult(result);
-        } catch (err) {
-            setError('Failed to get explanation from Gemini.');
-        } finally {
-            setIsExplaining(false);
-        }
-    };
 
-    const resultMetrics = useMemo(() => results ? [
-        { label: 'System Utilization (ρ)', value: results.rho.toFixed(4), description: 'Proportion of time servers are busy.' },
-        { label: 'Avg # in System (L)', value: results.L.toFixed(4), description: 'Average number of customers in the system.' },
-        { label: 'Avg # in Queue (Lq)', value: results.Lq.toFixed(4), description: 'Average number of customers waiting in line.' },
-        { label: 'Avg Time in System (W)', value: results.W.toFixed(4), description: 'Average time a customer spends in the system.' },
-        { label: 'Avg Time in Queue (Wq)', value: results.Wq.toFixed(4), description: 'Average time a customer waits in line.' },
-        { label: 'Idle Probability (P₀)', value: results.P0.toFixed(4), description: 'Probability of the system being empty.' },
-    ] : [], [results]);
-
-    const renderCalculator = () => (
-        <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card className="flex flex-col">
-                    <h3 className="text-xl font-semibold text-slate-800 mb-4">Input Parameters</h3>
-                    <div className="space-y-4">
-                        <Input id="lambda" name="lambda" label="Arrival Rate (λ)" type="number" value={params.lambda} onChange={handleParamChange} icon={<LambdaIcon />} placeholder="e.g., 10" />
-                        <Input id="mu" name="mu" label="Service Rate (μ) per server" type="number" value={params.mu} onChange={handleParamChange} icon={<MuIcon />} placeholder="e.g., 12" />
-                        <Input id="s" name="s" label="Number of Servers (s)" type="number" min="1" step="1" value={params.s} onChange={handleParamChange} icon={<ServerIcon />} placeholder="e.g., 1" />
-                    </div>
-                    <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                        <Button onClick={handleCalculate} isLoading={isLoading} className="flex-1">Calculate</Button>
-                        <Button variant="outline" onClick={() => fileInputRef.current?.click()} isLoading={isUploading} className="flex-1">
-                            <UploadIcon /> {isUploading ? 'Analyzing...' : 'Upload Photo'}
-                        </Button>
-                        <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
-                    </div>
-                    {error && <div className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-                </Card>
-
-                <Card>
-                    <h3 className="text-xl font-semibold text-slate-800 mb-4">Performance Metrics</h3>
-                    {results ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {resultMetrics.map(metric => (
-                                <div key={metric.label} className="bg-slate-50 p-4 rounded-lg text-center" title={metric.description}>
-                                    <p className="text-sm text-slate-500">{metric.label}</p>
-                                    <p className="text-2xl font-bold text-indigo-600">{metric.value}</p>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-full text-slate-500">
-                           <p>Results will be displayed here.</p>
-                        </div>
-                    )}
-                </Card>
-            </div>
-            {pnData.length > 0 && (
-                <Card className="mt-8">
-                    <h3 className="text-xl font-semibold text-slate-800 mb-4">Probability Distribution P(n)</h3>
-                    <div style={{ width: '100%', height: 400 }}>
-                        <ResponsiveContainer>
-                            <ComposedChart data={pnData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="n" label={{ value: 'Number of Customers (n)', position: 'insideBottom', offset: -5 }} />
-                                <YAxis yAxisId="left" label={{ value: 'Probability', angle: -90, position: 'insideLeft' }} />
-                                <YAxis yAxisId="right" orientation="right" label={{ value: 'Cumulative %', angle: 90, position: 'insideRight' }} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
-                                <Tooltip formatter={(value, name) => [typeof value === 'number' ? value.toFixed(4) : value, name]} />
-                                <Legend />
-                                <Bar yAxisId="left" dataKey="Pn" fill="#4f46e5" name="Probability of n customers" />
-                                <Line yAxisId="right" type="monotone" dataKey="cumulativePn" stroke="#db2777" name="Cumulative Probability" />
-                            </ComposedChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Card>
-            )}
-        </>
-    );
-
-    const renderAnalysis = () => (
-         <Card>
-            <h3 className="text-xl font-semibold text-slate-800 mb-4">Complex Scenario Analysis (Gemini Pro)</h3>
-            <p className="text-slate-600 mb-4">Describe a complex business problem. Gemini will use its advanced reasoning ("thinking mode") to provide a detailed analysis.</p>
-            <textarea
-                value={analysisQuery}
-                onChange={(e) => setAnalysisQuery(e.target.value)}
-                className="w-full h-32 p-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="e.g., A hospital emergency room is experiencing long wait times. Arrivals are Poisson at 10 patients/hour. There are 3 doctors, and each can treat a patient in an average of 15 minutes (exponential). What are the bottlenecks and how can we improve flow?"
-            />
-            <Button onClick={handleAnalyzeScenario} isLoading={isAnalyzing} className="mt-4">Analyze with Gemini Pro</Button>
-            {isAnalyzing && <p className="mt-4 text-indigo-600">Gemini is thinking... this might take a moment.</p>}
-            {analysisResult && (
-                <div className="mt-6 p-4 bg-slate-50 rounded-md prose max-w-none">
-                   <pre className="whitespace-pre-wrap font-sans">{analysisResult}</pre>
-                </div>
-            )}
-        </Card>
-    );
-    
-    const renderExplanation = () => (
-        <Card>
-            <h3 className="text-xl font-semibold text-slate-800 mb-4">Concept Explanation (Gemini + Google Search)</h3>
-            <Button onClick={handleExplainConcept} isLoading={isExplaining} className="mb-4">Explain Queuing Theory</Button>
-            {isExplaining && <p className="text-indigo-600">Fetching up-to-date information...</p>}
-            {explanationResult && (
-                 <div className="mt-6 p-4 bg-slate-50 rounded-md prose max-w-none">
-                    <pre className="whitespace-pre-wrap font-sans">{explanationResult.explanation}</pre>
-                    {explanationResult.sources.length > 0 && (
-                        <div className="mt-4">
-                            <h4 className="font-semibold">Sources from Google Search:</h4>
-                            <ul className="list-disc pl-5">
-                                {explanationResult.sources.map((chunk, index) => (
-                                    <li key={index}>
-                                        <a href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{chunk.web.title}</a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </div>
-            )}
-        </Card>
-    );
-
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'calculator': return renderCalculator();
-            case 'analysis': return renderAnalysis();
-            case 'explanation': return renderExplanation();
-            default: return renderCalculator();
-        }
-    };
-    
     return (
-        <div className="space-y-8">
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button onClick={() => setActiveTab('calculator')} className={`${activeTab === 'calculator' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
-                        Queuing Calculator
-                    </button>
-                    <button onClick={() => setActiveTab('analysis')} className={`${activeTab === 'analysis' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
-                        AI Scenario Analysis
-                    </button>
-                    <button onClick={() => setActiveTab('explanation')} className={`${activeTab === 'explanation' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
-                        AI Concept Explainer
-                    </button>
-                </nav>
-            </div>
-            {renderContent()}
+        <div className="space-y-6">
+            <Card>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <h2 className="text-xl font-semibold text-slate-800">M/M/s Model Parameters</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Input label="Arrival Rate (λ)" type="number" name="lambda" value={params.lambda} onChange={handleChange} step="any" min="0.1" required />
+                        <Input label="Service Rate (μ)" type="number" name="mu" value={params.mu} onChange={handleChange} step="any" min="0.1" required />
+                        <Input label="Number of Servers (s)" type="number" name="s" value={params.s} onChange={handleChange} step="1" min="1" required />
+                    </div>
+                    <Button type="submit" isLoading={isLoading} disabled={isLoading}>Calculate</Button>
+                </form>
+                {error && <p className="mt-4 text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
+            </Card>
+
+            {results && (
+                <Card>
+                    <h2 className="text-xl font-semibold text-slate-800 mb-4">Results</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                        <ResultItem label="Server Utilization (ρ)" value={`${(results.rho * 100).toFixed(2)}%`} />
+                        <ResultItem label="Avg. System Customers (L)" value={results.L.toFixed(4)} />
+                        <ResultItem label="Avg. Queue Customers (Lq)" value={results.Lq.toFixed(4)} />
+                        <ResultItem label="Avg. System Time (W)" value={results.W.toFixed(4)} />
+                        <ResultItem label="Avg. Queue Time (Wq)" value={results.Wq.toFixed(4)} />
+                        <ResultItem label="P(0) - System Empty" value={`${(results.P0 * 100).toFixed(2)}%`} />
+                    </div>
+                    
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-slate-700 mb-2">Probability Distribution P(n)</h3>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">n</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P(n)</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cumulative P(n)</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {pnData.map(item => (
+                                        <tr key={item.n}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.n}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.Pn.toExponential(4)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(item.cumulativePn * 100).toFixed(2)}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <Button onClick={handleAiAnalysis} isLoading={isAiLoading} disabled={isAiLoading} variant="secondary">
+                        Get AI Analysis & Insights
+                    </Button>
+                </Card>
+            )}
+
+            {aiAnalysis && (
+                <Card>
+                    <h2 className="text-xl font-semibold text-slate-800 mb-4">AI-Powered Analysis</h2>
+                     <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: aiAnalysis.replace(/\n/g, '<br />') }} />
+                </Card>
+            )}
         </div>
     );
 };
+
+const ResultItem = ({ label, value }: { label: string, value: string }) => (
+    <div className="bg-slate-50 p-4 rounded-lg">
+        <p className="text-sm text-slate-500">{label}</p>
+        <p className="text-2xl font-semibold text-slate-900">{value}</p>
+    </div>
+);
 
 export default QueuingModule;
