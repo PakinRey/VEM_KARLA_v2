@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react'; // <-- Asegúrate que 'useRef' esté
 import type { QueuingParams, QueuingResults, PnData } from '../types';
 import { solveMMs, calculatePnDistribution } from '../services/queuingService';
-import { getAIAnalysis } from '../services/geminiService';
+import { getAIAnalysis, analyzeProblemImage } from '../services/geminiService'; // <-- Añade 'analyzeProblemImage'
 import { useLanguage } from '../i18n/LanguageContext';
 import Card from './ui/Card';
 import Input from './ui/Input';
@@ -15,6 +15,8 @@ const QueuingModule: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
     const [aiAnalysis, setAiAnalysis] = useState<string>('');
+    const [isUploading, setIsUploading] = useState(false); // <-- Añadir
+    const fileInputRef = useRef<HTMLInputElement>(null); // <-- Añadir
     const { t } = useLanguage();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +72,32 @@ const QueuingModule: React.FC = () => {
         setAiAnalysis(analysis);
         setIsAiLoading(false);
     };
+    
+    const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>; // <-- Añadir
+    
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        setError('');
+        try {
+            const extractedParams = await analyzeProblemImage(file);
+            setParams({
+                lambda: extractedParams.lambda || 0,
+                mu: extractedParams.mu || 0,
+                s: extractedParams.s || 1,
+            });
+        } catch (err) {
+            console.error("Error analyzing image:", err);
+            setError("Failed to analyze image. Please check the image format and content.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    }; // <-- Añadir toda esta función
 
     return (
         <div className="space-y-6">
@@ -81,7 +109,16 @@ const QueuingModule: React.FC = () => {
                         <Input label={t('serviceRateLabel')} type="number" name="mu" value={params.mu} onChange={handleChange} step="any" min="0.1" required />
                         <Input label={t('serversLabel')} type="number" name="s" value={params.s} onChange={handleChange} step="1" min="1" required />
                     </div>
-                    <Button type="submit" isLoading={isLoading} disabled={isLoading}>{t('calculateButton')}</Button>
+                     <div className="flex gap-4"> {/* <-- Envuelve los botones en un div */}
+                        <Button type="submit" isLoading={isLoading} disabled={isLoading}>{t('calculateButton')}</Button>
+
+                        {/* --- CÓDIGO AÑADIDO (DEL .MD ORIGINAL) --- */}
+                        <Button variant="outline" onClick={() => fileInputRef.current?.click()} isLoading={isUploading}>
+                            <UploadIcon /> {isUploading ? 'Analyzing...' : t('Subir Foto')} {/* Puedes añadir 'Subir Foto' a tus locales.ts */}
+                        </Button>
+                        <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                        {/* --- FIN DEL CÓDIGO AÑADIDO --- */}
+                    </div>
                 </form>
                 {error && <p className="mt-4 text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
             </Card>
