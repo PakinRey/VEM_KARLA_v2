@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -9,7 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 const Input = React.forwardRef<HTMLInputElement, InputProps>(({ label, icon, id, ...props }, ref) => {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-700 mb-1">
+      <label htmlFor={id} className="block text-sm font-medium text-zinc-700 mb-1">
         {label}
       </label>
       <div className="relative rounded-md shadow-sm">
@@ -21,7 +20,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({ label, icon, id,
         <input
           ref={ref}
           id={id}
-          className={`block w-full rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${icon ? 'pl-10' : ''}`}
+          className={`block w-full rounded-md border-zinc-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${icon ? 'pl-10' : ''}`}
           {...props}
         />
       </div>
