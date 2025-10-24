@@ -1,3 +1,5 @@
+// components/PertModule.tsx
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Matrix, CellBase } from 'react-spreadsheet';
 import Card from './ui/Card';
@@ -114,7 +116,6 @@ export default function PertModule({ initialData }: Props) {
                    `Deuda = ... - ${fmtCost(crash?.optimalCost)} = ${fmtCost(q5)}`;
 
   // --- RENDERIZADO (VISTA) ---
-  // (Ahora solo renderiza los componentes hijos)
   return (
     <Card>
       <h2 className={styles.cardHeader}>
@@ -122,26 +123,28 @@ export default function PertModule({ initialData }: Props) {
         Caso 1 — PERT / Crashing (Q1–Q9)
       </h2>
 
+      {/* --- SECCIÓN DE INPUTS --- */}
       <PertCostInputs
         fixedCosts={fixedCosts} setFixedCosts={setFixedCosts}
         penaltyCost={penaltyCost} setPenaltyCost={setPenaltyCost}
         penaltyWeek={penaltyWeek} setPenaltyWeek={setPenaltyWeek}
       />
-
       <PertActivitySheet sheet={sheet} setSheet={setSheet} />
 
+      {/* --- SECCIÓN DE PROCEDIMIENTOS Y RESPUESTAS --- */}
       {(pert && crash) && (
         <>
+          {/* --- BLOQUE DE PROCEDIMIENTOS --- */}
           <details className={styles.details} open>
-            <summary>1. Justificación Análisis PERT (Probabilidades Q6-Q9)</summary>
+            <summary>1. Procedimiento y Justificación (PERT Q6-Q9)</summary>
             <div className={styles.content}>
-              <PertNetworkDiagram activities={pert.activities} />
+              <PertNetworkDiagram pert={pert} />
               <PertAnalysisTable activities={pert.activities} activitiesFromSheet={activitiesFromSheet} />
             </div>
           </details>
 
           <details className={styles.details} open>
-            <summary>2. Justificación Análisis de Costos (Crashing Q1-Q5)</summary>
+            <summary>2. Procedimiento y Justificación (Crashing Q1-Q5)</summary>
             <div className={styles.content}>
               <CrashingCalculations activities={pert.activities} />
               <CrashingStepsTable crash={crash} fixedCosts={fixedCosts} penaltyCost={penaltyCost} penaltyWeek={penaltyWeek} />
@@ -149,16 +152,22 @@ export default function PertModule({ initialData }: Props) {
             </div>
           </details>
 
-          <PertResultsGrid
-            pert={pert}
-            crash={crash}
-            q5={q5}
-            q5_formula={q5_formula}
-            q3={q3}
-            fixedCosts={fixedCosts}
-            penaltyCost={penaltyCost}
-            penaltyWeek={penaltyWeek}
-          />
+          {/* --- BLOQUE DE RESPUESTAS (MEJORADO) --- */}
+          <div className="mt-6 p-4 bg-slate-800 text-white rounded-lg">
+            <h4 className="font-semibold mb-3 text-lg">Respuestas del Examen (Q1-Q9)</h4>
+            
+            <PertResultsGrid
+              pert={pert}
+              crash={crash}
+              q5={q5}
+              q5_formula={q5_formula}
+              q3={q3}
+              fixedCosts={fixedCosts}
+              penaltyCost={penaltyCost}
+              penaltyWeek={penaltyWeek}
+            />
+          </div>
+          {/* --- FIN DE LA MEJORA --- */}
         </>
       )}
       

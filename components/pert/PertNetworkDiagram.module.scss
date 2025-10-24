@@ -1,0 +1,98 @@
+/* components/pert/PertNetworkDiagram.module.scss */
+
+.subHeader {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600;
+  margin-bottom: 0.5rem; /* mb-2 */
+  color: #334155; /* slate-700 */
+}
+
+.description {
+  font-size: 0.875rem; /* text-sm */
+  color: #475569; /* slate-600 */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+/* --- ¡ESTA ES LA REGLA CLAVE PARA EL ERROR #004! --- */
+.reactFlowContainer {
+  width: 100%;
+  min-height: 400px; /* Le da una altura mínima */
+  height: 400px;     /* Le da una altura fija */
+  border-radius: 0.5rem; /* rounded-lg */
+  border: 1px solid #e2e8f0; /* border-slate-200 */
+  background-color: #f8fafc; /* bg-slate-50 */
+}
+
+/* --- Estilos para el Nodo Personalizado (Actividad) --- */
+.reactFlowNode {
+  padding: 0.75rem 1rem; /* px-4 py-3 */
+  border-radius: 0.375rem; /* rounded-md */
+  background-color: #ffffff; /* bg-white */
+  border: 2px solid #0284c7; /* border-2 border-sky-600 */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* shadow-sm */
+  width: 120px;
+  text-align: center;
+  position: relative; /* Necesario para los Handles */
+
+  .label {
+    font-weight: 700;
+    font-size: 1.125rem; /* text-lg */
+    color: #0c4a6e; /* text-sky-800 */
+  }
+
+  .te {
+    font-size: 0.75rem; /* text-xs */
+    color: #475569; /* slate-600 */
+    margin-top: 0.25rem; /* mt-1 */
+  }
+}
+
+/* --- Modificador para Nodo Crítico --- */
+.critical {
+  border-color: #dc2626; /* border-red-600 */
+  background-color: #fef2f2; /* bg-red-50 */
+
+  .label {
+    color: #991b1b; /* text-red-800 */
+  }
+  .te {
+    color: #b91c1c; /* text-red-700 */
+  }
+}
+
+/* --- Estilo para el Nodo "Letrero" de Ruta Crítica --- */
+.criticalPathText {
+  padding: 0.5rem 0.75rem;
+  background-color: #f1f5f9; /* bg-slate-100 */
+  border: 1px dashed #94a3b8; /* border-dashed border-slate-400 */
+  border-radius: 0.375rem; /* rounded-md */
+  font-size: 0.875rem; /* text-sm */
+  color: #334155; /* slate-700 */
+  max-width: 300px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  
+  div { 
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #1e293b; /* slate-800 */
+  }
+
+  span {
+    font-family: monospace;
+    font-weight: 500;
+    color: #dc2626; /* text-red-600 */
+  }
+}
+
+/* --- ¡NUEVO! Oculta los "enchufes" --- */
+.handle {
+  width: 1px;
+  height: 1px;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  /* Los hacemos invisibles pero funcionales */
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}

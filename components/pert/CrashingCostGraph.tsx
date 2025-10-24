@@ -1,3 +1,5 @@
+// components/pert/CrashingCostGraph.tsx
+
 import React from 'react';
 import { CrashingAnalysis } from '../../services/pertService';
 import {
@@ -20,7 +22,13 @@ export default function CrashingCostGraph({ crash }: Props) {
         Visualización de la tabla anterior. El punto más bajo de la curva "Costo Total" es
         el Tiempo y Costo Óptimos.
       </p>
-      <div className={styles.chartContainer}>
+      
+      {/* --- ¡CORRECCIÓN AQUÍ! --- */}
+      {/* Añadimos un style con 'height' fija para solucionar el error de Recharts */}
+      <div 
+        className={styles.chartContainer} 
+        style={{ width: '100%', height: 400, minWidth: 0 }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={crash.steps} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />

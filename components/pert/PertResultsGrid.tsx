@@ -1,3 +1,5 @@
+// components/pert/PertResultsGrid.tsx
+
 import React from 'react';
 import { PertAnalysis, CrashingAnalysis } from '../../services/pertService';
 import { Info } from 'lucide-react';
@@ -24,7 +26,9 @@ export default function PertResultsGrid({
                    `=${fmtCost(crash.costAt29Weeks_Activities)} + ${fmtCost(29 * fixedCosts)} + ${fmtCost(Math.max(0, 29-penaltyWeek)*penaltyCost)}`;
 
   return (
+    // --- ¡CORRECCIÓN DE ORDEN AQUÍ! ---
     <div className={styles.resultsGrid}>
+      {/* --- PREGUNTAS DE CRASHING (Q1-Q5) --- */}
       <div className={styles.resultBox}>
         <div><span><b>Q1</b> Costo total óptimo</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content="El punto más bajo en la curva de 'Costo Total' del gráfico." className={styles.formulaIcon} /></div>
         <div>{fmtCost(crash.optimalCost)}</div>
@@ -34,6 +38,10 @@ export default function PertResultsGrid({
         <div>{fmtCost(crash.costAt29Weeks_Activities)}</div>
       </div>
       <div className={styles.resultBox}>
+        <div><span><b>Q3</b> Ingreso sem 29</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content="Si el proyecto dura 29 semanas, abre en la semana 29. No hay ingresos *en* la semana 29." className={styles.formulaIcon} /></div>
+        <div>{fmtCost(q3)}</div>
+      </div>
+      <div className={styles.resultBox}>
         <div><span><b>Q4</b> Costo total (29s)</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content={q4_formula} className={styles.formulaIcon} /></div>
         <div>{fmtCost(crash.costAt29Weeks_Total)}</div>
       </div>
@@ -41,22 +49,8 @@ export default function PertResultsGrid({
         <div><span><b>Q5</b> Deuda sem 29 (T. opt)</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content={q5_formula} className={styles.formulaIcon} /></div>
         <div>{fmtCost(q5)}</div>
       </div>
-      <div className={styles.resultBox}>
-        <div><span><b>Q3</b> Ingreso sem 29</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content="Si el proyecto dura 29 semanas, abre en la semana 29. No hay ingresos *en* la semana 29." className={styles.formulaIcon} /></div>
-        <div>{fmtCost(q3)}</div>
-      </div>
-      <div className={styles.resultBox}>
-        <div><span>Duración Tₑ (PERT)</span></div>
-        <div>{fmt(pert.projectDuration, 2)} sem</div>
-      </div>
-      <div className={styles.resultBox}>
-        <div><span>Ruta Crítica (PERT)</span></div>
-        <div className="text-sm font-semibold">{pert.criticalPath.join(' → ')}</div>
-      </div>
-      <div className={styles.resultBox}>
-        <div><span>Desv. Estándar (σ)</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content={`= SQRT(Suma de Varianzas de Ruta Crítica)\n= SQRT(${fmt(pert.projectVariance, 4)})`} className={styles.formulaIcon} /></div>
-        <div>{fmt(Math.sqrt(pert.projectVariance), 3)}</div>
-      </div>
+      
+      {/* --- PREGUNTAS DE PERT (Q6-Q9) --- */}
       <div className={styles.resultBox}>
         <div><span><b>Q6</b> P(T ≤ 49)</span></div>
         <div>{fmt(pert.probQ6, 6)}</div>
@@ -73,6 +67,21 @@ export default function PertResultsGrid({
         <div><span><b>Q9</b> P(T≤49 y T≥55)</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content="Evento imposible. Un número no puede ser a la vez menor que 49 y mayor que 55." className={styles.formulaIcon} /></div>
         <div>0.0</div>
       </div>
+
+      {/* --- DATOS INFORMATIVOS (SIN PREGUNTA) --- */}
+      <div className={styles.resultBox}>
+        <div><span>Duración Tₑ (PERT)</span></div>
+        <div>{fmt(pert.projectDuration, 2)} sem</div>
+      </div>
+      <div className={styles.resultBox}>
+        <div><span>Ruta Crítica (PERT)</span></div>
+        <div className="text-sm font-semibold">{pert.criticalPath.join(' → ')}</div>
+      </div>
+      <div className={styles.resultBox}>
+        <div><span>Desv. Estándar (σ)</span> <Info data-tooltip-id="pert-formula-tip" data-tooltip-content={`= SQRT(Suma de Varianzas de Ruta Crítica)\n= SQRT(${fmt(pert.projectVariance, 4)})`} className={styles.formulaIcon} /></div>
+        <div>{fmt(Math.sqrt(pert.projectVariance), 3)}</div>
+      </div>
     </div>
+    // --- FIN DE LA CORRECCIÓN DE ORDEN ---
   );
 }
